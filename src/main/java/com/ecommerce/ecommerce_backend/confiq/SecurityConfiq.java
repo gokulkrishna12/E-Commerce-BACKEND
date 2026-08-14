@@ -43,6 +43,7 @@ public class SecurityConfiq {
                         .requestMatchers(HttpMethod.GET,    "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET,    "/api/reviews/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/ai/**").permitAll()
                         .requestMatchers(HttpMethod.POST,   "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.PUT,    "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**").permitAll()
