@@ -81,7 +81,8 @@ public class SecurityConfiq {
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",
                 "http://192.168.*.*:5173",
-                "http://10.*.*.*:5173"
+                "http://10.*.*.*:5173",
+                "http://gk-shopease-frontend-2026.s3-website-us-east-1.amazonaws.com"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
