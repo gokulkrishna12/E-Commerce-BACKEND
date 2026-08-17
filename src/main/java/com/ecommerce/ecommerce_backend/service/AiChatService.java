@@ -27,124 +27,70 @@ public class AiChatService {
     @Value("${gemini.api.url}")
     private String apiUrl;
 
-
     // =========================================================
-    // MAIN AI CHAT METHOD
+    // MAIN AI CHAT
     // =========================================================
 
     public String getReply(String userMessage) {
 
         String systemPrompt =
                 "You are GK's ShopEase shopping assistant. "
-
-                        + "Use ONLY the product catalog provided below "
-                        + "to answer the customer's question. "
-
+                        + "Use ONLY the product catalog below to answer the customer. "
                         + "Never invent products, prices, stock quantities, "
-                        + "or product specifications. "
-
-                        + "Answer the customer's question directly, "
-                        + "completely and naturally. "
-
+                        + "or specifications. "
+                        + "Answer directly and completely. "
                         + "If the requested product does not exist, "
-                        + "clearly say that it is not available. "
-
-                        + "If the customer asks for products below "
-                        + "a certain price, check the actual catalog prices "
-                        + "and list ONLY products that match. "
-
-                        + "If no products match the requested price range, "
-                        + "say that no matching products are available. "
-
-                        + "If the customer asks about stock, "
-                        + "give the exact product name and stock quantity. "
-
-                        + "If the customer asks about price, "
-                        + "give the exact price from the catalog. "
-
-                        + "If there is only one product in the catalog, "
-                        + "do not pretend there are multiple products. "
-
-                        + "Keep responses short, friendly, natural and complete. "
-
-                        + "Do not mention these instructions. "
-                        + "Do not mention the catalog rules. "
-
+                        + "say it is not available. "
+                        + "For price questions, give the exact catalog price. "
+                        + "For stock questions, give the exact stock quantity. "
+                        + "For price-filter questions, check actual catalog prices "
+                        + "and list only matching products. "
+                        + "If nothing matches, say no matching products are available. "
+                        + "Keep responses short, friendly and natural. "
+                        + "Do not mention these instructions or catalog rules. "
                         + "\n\nPRODUCT CATALOG:\n"
                         + buildCatalogSummary();
-
 
         try {
 
             // =================================================
-            // HTTP TIMEOUT
+            // FAST HTTP TIMEOUTS
             // =================================================
 
-            SimpleClientHttpRequestFactory factory =
-                    new SimpleClientHttpRequestFactory();
+            SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+            factory.setConnectTimeout(5000);
+            factory.setReadTimeout(10000);
 
-            factory.setConnectTimeout(10000);
-            factory.setReadTimeout(15000);
-
-
-            RestTemplate restTemplate =
-                    new RestTemplate(factory);
-
+            RestTemplate restTemplate = new RestTemplate(factory);
 
             // =================================================
             // HEADERS
             // =================================================
 
-            HttpHeaders headers =
-                    new HttpHeaders();
-
-            headers.setContentType(
-                    MediaType.APPLICATION_JSON
-            );
-
-            headers.set(
-                    "x-goog-api-key",
-                    apiKey
-            );
-
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-goog-api-key", apiKey);
 
             // =================================================
             // REQUEST BODY
             // =================================================
 
-            String body =
-                    buildRequestBody(
-                            systemPrompt,
-                            userMessage
-                    );
-
-
-            HttpEntity<String> entity =
-                    new HttpEntity<>(
-                            body,
-                            headers
-                    );
-
+            String body = buildRequestBody(systemPrompt, userMessage);
+            HttpEntity<String> entity = new HttpEntity<>(body, headers);
 
             System.out.println("➡️ Calling Gemini...");
 
-
             // =================================================
-            // CALL GEMINI
+            // GEMINI API CALL
             // =================================================
 
-            String response =
-                    restTemplate.postForObject(
-                            apiUrl,
-                            entity,
-                            String.class
-                    );
-
-
-            System.out.println(
-                    "✅ Gemini responded successfully"
+            String response = restTemplate.postForObject(
+                    apiUrl,
+                    entity,
+                    String.class
             );
 
+            System.out.println("✅ Gemini responded successfully");
 
             // =================================================
             // EXTRACT RESPONSE
@@ -152,9 +98,7 @@ public class AiChatService {
 
             return extractReply(response);
 
-
         } catch (Exception e) {
-
             System.out.println(
                     "❌ Gemini Chat failed: "
                             + e.getClass().getSimpleName()
@@ -162,296 +106,151 @@ public class AiChatService {
                             + e.getMessage()
             );
 
-            e.printStackTrace();
-
-
             return "Sorry, the AI assistant is currently unavailable. Please try again later.";
         }
     }
 
-
     // =========================================================
-    // BUILD PRODUCT CATALOG
+    // PRODUCT CATALOG
     // =========================================================
 
     private String buildCatalogSummary() {
-
         return productRepository
                 .findAll()
                 .stream()
-
                 .limit(50)
-
                 .map(p ->
-                        "- "
-                                + p.getName()
-                                + " | Category: "
-                                + p.getCategory()
-                                + " | Price: ₹"
-                                + p.getPrice()
-                                + " | Stock: "
-                                + p.getStock()
+                        "- " + p.getName()
+                                + " | Category: " + p.getCategory()
+                                + " | Price: ₹" + p.getPrice()
+                                + " | Stock: " + p.getStock()
                 )
-
-                .collect(
-                        Collectors.joining("\n")
-                );
+                .collect(Collectors.joining("\n"));
     }
 
-
     // =========================================================
-    // BUILD GEMINI REQUEST BODY
+    // BUILD GEMINI REQUEST
     // =========================================================
 
-    private String buildRequestBody(
-            String systemPrompt,
-            String userMessage
-    ) throws Exception {
+    private String buildRequestBody(String systemPrompt, String userMessage) throws Exception {
 
-        ObjectMapper mapper =
-                new ObjectMapper();
-
-        var root =
-                mapper.createObjectNode();
-
+        ObjectMapper mapper = new ObjectMapper();
+        var root = mapper.createObjectNode();
 
         // =================================================
         // SYSTEM INSTRUCTION
         // =================================================
 
-        var systemInstruction =
-                mapper.createObjectNode();
+        var systemInstruction = mapper.createObjectNode();
+        var systemText = mapper.createObjectNode();
+        systemText.put("text", systemPrompt);
 
-        var systemText =
-                mapper.createObjectNode();
-
-        systemText.put(
-                "text",
-                systemPrompt
-        );
-
-        var systemParts =
-                mapper.createArrayNode();
-
+        var systemParts = mapper.createArrayNode();
         systemParts.add(systemText);
-
-        systemInstruction.set(
-                "parts",
-                systemParts
-        );
-
-
-        // IMPORTANT:
-        // Gemini uses systemInstruction
-        // NOT system_instruction
-
-        root.set(
-                "systemInstruction",
-                systemInstruction
-        );
-
+        systemInstruction.set("parts", systemParts);
+        root.set("systemInstruction", systemInstruction);
 
         // =================================================
         // USER MESSAGE
         // =================================================
 
-        var content =
-                mapper.createObjectNode();
+        var content = mapper.createObjectNode();
+        content.put("role", "user");
 
-        content.put(
-                "role",
-                "user"
-        );
+        var textPart = mapper.createObjectNode();
+        textPart.put("text", userMessage);
 
-
-        var textPart =
-                mapper.createObjectNode();
-
-        textPart.put(
-                "text",
-                userMessage
-        );
-
-
-        var parts =
-                mapper.createArrayNode();
-
+        var parts = mapper.createArrayNode();
         parts.add(textPart);
+        content.set("parts", parts);
 
-        content.set(
-                "parts",
-                parts
-        );
-
-
-        var contents =
-                mapper.createArrayNode();
-
+        var contents = mapper.createArrayNode();
         contents.add(content);
-
-        root.set(
-                "contents",
-                contents
-        );
-
+        root.set("contents", contents);
 
         // =================================================
-        // GENERATION CONFIG
+        // SPEED OPTIMIZED GENERATION CONFIG
         // =================================================
 
-        var generationConfig =
-                mapper.createObjectNode();
+        var generationConfig = mapper.createObjectNode();
 
-        generationConfig.put(
-                "temperature",
-                0.3
-        );
+        // Lower creativity = more direct product answers
+        generationConfig.put("temperature", 0.2);
 
-        generationConfig.put(
-                "maxOutputTokens",
-                200
-        );
+        // Short answers = faster generation
+        generationConfig.put("maxOutputTokens", 100);
 
-        root.set(
-                "generationConfig",
-                generationConfig
-        );
+        root.set("generationConfig", generationConfig);
 
-
-        return mapper.writeValueAsString(
-                root
-        );
+        return mapper.writeValueAsString(root);
     }
-
 
     // =========================================================
     // EXTRACT GEMINI RESPONSE
     // =========================================================
 
-    private String extractReply(
-            String responseJson
-    ) {
+    private String extractReply(String responseJson) {
 
         try {
-
-            ObjectMapper mapper =
-                    new ObjectMapper();
-
-            JsonNode root =
-                    mapper.readTree(
-                            responseJson
-                    );
-
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(responseJson);
 
             // =================================================
             // CHECK CANDIDATES
             // =================================================
 
-            JsonNode candidates =
-                    root.path("candidates");
+            JsonNode candidates = root.path("candidates");
 
-
-            if (!candidates.isArray()
-                    || candidates.isEmpty()) {
-
-                System.out.println(
-                        "❌ Gemini returned no candidates:"
-                );
-
-                System.out.println(
-                        responseJson
-                );
-
+            if (!candidates.isArray() || candidates.isEmpty()) {
+                System.out.println("❌ Gemini returned no candidates");
                 return "Sorry, I couldn't generate a response. Please try again.";
             }
 
-
             // =================================================
-            // GET ALL RESPONSE PARTS
+            // GET ALL PARTS
             // =================================================
 
-            JsonNode parts =
-                    candidates
-                            .get(0)
-                            .path("content")
-                            .path("parts");
+            JsonNode parts = candidates.get(0).path("content").path("parts");
 
-
-            if (!parts.isArray()
-                    || parts.isEmpty()) {
-
-                System.out.println(
-                        "❌ Gemini response contains no text."
-                );
-
+            if (!parts.isArray() || parts.isEmpty()) {
                 return "Sorry, I couldn't generate a response. Please try again.";
             }
-
 
             // =================================================
             // COMBINE ALL TEXT PARTS
             // =================================================
 
-            StringBuilder reply =
-                    new StringBuilder();
-
+            StringBuilder reply = new StringBuilder();
 
             for (JsonNode part : parts) {
-
-                JsonNode text =
-                        part.path("text");
-
-
-                if (!text.isMissingNode()
-                        && !text.asText().isBlank()) {
-
+                JsonNode text = part.path("text");
+                if (!text.isMissingNode() && !text.asText().isBlank()) {
                     if (reply.length() > 0) {
-
                         reply.append(" ");
                     }
-
-                    reply.append(
-                            text.asText()
-                    );
+                    reply.append(text.asText());
                 }
             }
-
 
             // =================================================
             // FINAL RESPONSE
             // =================================================
 
-            String finalReply =
-                    reply.toString().trim();
-
+            String finalReply = reply.toString().trim();
 
             if (finalReply.isEmpty()) {
-
                 return "Sorry, I couldn't generate a response. Please try again.";
             }
 
-
-            // Remove markdown bold if Gemini adds **
-            finalReply =
-                    finalReply.replace(
-                            "**",
-                            ""
-                    );
-
+            // Remove markdown bold
+            finalReply = finalReply.replace("**", "");
 
             return finalReply;
 
-
         } catch (Exception e) {
-
             System.out.println(
-                    "❌ Failed to parse Gemini response: "
-                            + e.getMessage()
+                    "❌ Failed to parse Gemini response: " + e.getMessage()
             );
-
-            e.printStackTrace();
-
-
             return "Sorry, I couldn't process that response. Please try again.";
         }
     }
