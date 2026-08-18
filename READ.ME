@@ -1,0 +1,104 @@
+# ⚙️ GK ShopEase — Backend REST API & Microservices
+
+[![Live Frontend](https://img.shields.io/badge/Live_App-CloudFront-blue?style=for-the-badge&logo=amazon-aws)](https://d1637jx31wm2nm.cloudfront.net)
+[![Java 17](https://img.shields.io/badge/Java_17-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot_3-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Spring Security](https://img.shields.io/badge/Spring_Security_JWT-6DB33F?style=for-the-badge&logo=spring-security&logoColor=white)](https://spring.io/projects/spring-security)
+[![Amazon RDS](https://img.shields.io/badge/Amazon_RDS_MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://aws.amazon.com/rds/)
+[![AWS EC2](https://img.shields.io/badge/AWS_EC2_Ubuntu-FF9900?style=for-the-badge&logo=amazon-ec2&logoColor=white)](https://aws.amazon.com/ec2/)
+[![Gemini AI](https://img.shields.io/badge/Google_Gemini_API-8E75B2?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![CI/CD](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/features/actions)
+
+> Robust, secure, and production-grade REST API powering the **GK ShopEase** e-commerce platform. Built with **Java 17**, **Spring Boot 3**, **Spring Data JPA**, and **Google Gemini API**, hosted on **AWS EC2** with **Amazon RDS MySQL**.
+
+---
+
+## ✨ Features
+
+- 🛡️ **Stateless JWT Security & RBAC:** Complete authentication flow with password encryption (BCrypt) and role-based permissions (`ROLE_USER`, `ROLE_ADMIN`).
+- 🤖 **Generative AI Integration:** Contextual shopping assistant using Google Gemini API to parse natural language queries and suggest matching products.
+- 📦 **Order & Inventory Management:** Complete CRUD operations for products, categories, dynamic carts, and transactional order records.
+- 🗄️ **Relational Persistence:** Multi-table relational schema hosted on Amazon RDS MySQL with foreign key constraints and indexed queries.
+- 🚀 **Automated Continuous Deployment:** GitHub Actions pipeline compiling Maven builds, transferring JARs via SCP, and auto-restarting the EC2 `systemd` daemon.
+
+---
+
+## 🛠️ Tech Stack
+
+| Category | Technology |
+|---|---|
+| **Language & Framework** | Java 17, Spring Boot 3.x |
+| **Security & Auth** | Spring Security, JSON Web Tokens (JWT), BCrypt |
+| **Persistence & ORM** | Spring Data JPA, Hibernate, MySQL Driver |
+| **Database** | Amazon RDS (MySQL 8.0) |
+| **AI Integration** | Google Gemini API (`gemini-3.6-flash`), Jackson JSON Streaming |
+| **Cloud Hosting** | AWS EC2 (Ubuntu 24.04 LTS), Systemd Process Manager |
+| **Build & CI/CD** | Apache Maven, GitHub Actions (SCP & SSH automation) |
+
+---
+
+## 📁 Project Structure
+
+```text
+E-Commerce-BACKEND/
+├── .github/workflows/
+│   └── deploy.yml              # Maven build, SCP artifact transfer & service restart
+├── src/main/java/com/ecommerce/
+│   ├── config/                 # SecurityConfig, CorsConfig, JWTFilter
+│   ├── controller/             # AuthController, ProductController, CartController, AIController
+│   ├── model/                  # User, Role, Product, Order, OrderItem, Cart, CartItem
+│   ├── repository/             # Spring Data JPA interfaces
+│   ├── service/                # Business logic, Gemini AI service, Order fulfillment
+│   └── util/                   # JwtUtils, Jackson parsers
+├── src/main/resources/
+│   └── application.properties  # Database, JWT secret, and server configuration
+└── pom.xml
+
+🚀 Local Setup & Configuration
+1. Prerequisites
+JDK 17 or higher
+
+Maven 3.8+
+
+MySQL 8.0+
+
+2. Configuration
+Configure your src/main/resources/application.properties with database and API keys:
+
+Properties
+spring.datasource.url=jdbc:mysql://localhost:3306/ecommerce_db?createDatabaseIfNotExist=true
+spring.datasource.username=root
+spring.datasource.password=yourpassword
+spring.jpa.hibernate.ddl-auto=update
+
+# JWT Configuration
+app.jwt.secret=your_jwt_256_bit_secret_key_here
+app.jwt.expiration-ms=86400000
+
+# Gemini AI Key
+gemini.api.key=YOUR_GEMINI_API_KEY
+3. Run Locally
+Bash
+# Clone the repository
+git clone [https://github.com/gokulkrishna12/E-Commerce-BACKEND.git](https://github.com/gokulkrishna12/E-Commerce-BACKEND.git)
+cd E-Commerce-BACKEND
+
+# Package and run
+mvn clean spring-boot:run
+🔄 CI/CD & Cloud Infrastructure
+The backend uses a fully automated deployment pipeline via .github/workflows/deploy.yml:
+
+Pushes to main trigger a GitHub Actions runner.
+
+Compiles and packages the application using mvn clean package -DskipTests.
+
+Deploys the generated ecommerce-backend-0.0.1-SNAPSHOT.jar to AWS EC2 over SSH/SCP.
+
+Restarts the background service (sudo systemctl restart shopease) with zero manual terminal interaction.
+
+👨‍💻 Author
+Gokul Krishna
+
+GitHub: @gokulkrishna12
+
+LinkedIn: gokulkrishna08
